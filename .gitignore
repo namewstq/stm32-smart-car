@@ -1,0 +1,32 @@
+# ============ Keil MDK Build Output ============
+LIST/
+OUT/
+PROJ/Listings/
+PROJ/Objects/
+*.o
+*.d
+*.crf
+*.htm
+*.dep
+*.lnp
+*.iex
+*.axf
+*.sct
+*.map
+*.bak
+*.hex
+*.bin
+
+# ============ Keil IDE Files ============
+PROJ/*.uvguix.*
+PROJ/*.uvoptx
+
+# ============ Temp Files ============
+*.swp
+*~
+*.bak
+*.orig
+Thumbs.db
+.DS_Store
+
+
