@@ -3,13 +3,13 @@
 
 #include "stm32f10x.h"
 
-#define MQTT_BROKER_ADDRESS    "efff2cb551.st1.iotda-device.cn-south-1.myhuaweicloud.com"
-#define MQTT_PORT              1883
-#define MQTT_CLIENT_ID         "6a4baaccc9429d337f57cf79_myNodeId_0_0_2026070703"
-#define MQTT_USERNAME          "6a4baaccc9429d337f57cf79_myNodeId"
-#define MQTT_PASSWORD          "1f34abb3d40a1fcdce5ee8584c5f975da9c564b0964a8f8efcb385b2f17c5808"
-
-#define MQTT_DEVICE_ID         "6a4baaccc9429d337f57cf79_myNodeId"
+/* === 请替换为你的华为云IoT平台配置 === */
+#define MQTT_BROKER_ADDRESS    "YOUR_BROKER_ADDRESS"               /* 平台接入地址 */
+#define MQTT_PORT              1883                                 /* MQTT端口 */
+#define MQTT_CLIENT_ID         "YOUR_CLIENT_ID"                     /* 客户端ID */
+#define MQTT_USERNAME          "YOUR_DEVICE_ID"                     /* 设备ID（用户名） */
+#define MQTT_PASSWORD          "YOUR_PASSWORD"                      /* 设备密钥 */
+#define MQTT_DEVICE_ID         "YOUR_DEVICE_ID"                     /* 设备ID */
 
 #define MQTT_TOPIC_PROP_REPORT "$oc/devices/" MQTT_DEVICE_ID "/sys/properties/report"
 #define MQTT_TOPIC_CMD_SUB     "$oc/devices/" MQTT_DEVICE_ID "/sys/commands/#"

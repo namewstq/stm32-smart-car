@@ -5,8 +5,9 @@
 
 #define EN_DEBUG_ESP8266	0
 
-#define WIFI_SSID 			"TQ 2805"
-#define WIFI_PASSWORD		"88888888"
+/* === 请替换为你的WiFi名称和密码 === */
+#define WIFI_SSID 			"YOUR_WIFI_SSID"
+#define WIFI_PASSWORD		"YOUR_WIFI_PASSWORD"
 
 extern uint8_t  g_esp8266_tx_buf[512];
 extern volatile uint8_t  g_esp8266_rx_buf[1024];

@@ -1,32 +1,32 @@
-# STM32 智能联网小车 / STM32 Smart Connected Car
+# STM32 智能联网小车
 
 ![STM32](https://img.shields.io/badge/MCU-STM32F103VET6-blue)
 ![IDE](https://img.shields.io/badge/IDE-Keil%20MDK--ARM-green)
 ![Protocol](https://img.shields.io/badge/Protocol-MQTT-orange)
-![Cloud](https://img.shields.io/badge/Cloud-Huawei%20IoT-red)
+![Cloud](https://img.shields.io/badge/Cloud-%E5%8D%8E%E4%B8%BA%E4%BA%91IoT-red)
 
-基于 **STM32F103VET6** 的多功能智能联网小车，集成多传感器融合、多模式控制、蓝牙/WiFi 双通信和华为云 IoT 平台接入。
+基于 **STM32F103VET6** 的多功能智能联网小车，集成多传感器融合、5种工作模式、蓝牙/WiFi 双通信和华为云 IoT 平台接入。
 
 ---
 
-## 📋 项目概述 / Overview
+## 项目概述
 
-本项目设计并实现了一款具备 **环境感知、运动控制、无线通信和云端数据交互** 能力的智能联网小车。
+本项目设计并实现了一款具备**环境感知、运动控制、无线通信和云端数据交互**能力的智能联网小车。
 
 **核心特性：**
-- 🧠 **主控**：STM32F103VET6（Cortex-M3 @72MHz）
-- 🚗 **运动**：L298N + 4路直流减速电机，PWM差速转向
-- 👁️ **感知**：超声波HC-SR04、DHT11温湿度、4路红外传感器
-- 📟 **显示**：0.96寸OLED（SSD1306，128×64，I2C）
-- 📡 **通信**：HC-05蓝牙（USART2）+ ESP8266 WiFi（USART3）
-- ☁️ **云端**：MQTT协议对接华为云IoT平台
-- 🎵 **音频**：蜂鸣器播放13首预置旋律
+- **主控**：STM32F103VET6（Cortex-M3 @72MHz）
+- **运动**：L298N + 4路直流减速电机，PWM差速转向
+- **感知**：超声波HC-SR04、DHT11温湿度、4路红外传感器（2路避障+2路巡线）
+- **显示**：0.96寸OLED（SSD1306，128×64，I2C）
+- **通信**：HC-05蓝牙（USART2）+ ESP8266 WiFi（USART3）
+- **云端**：MQTT协议对接华为云IoT平台
+- **音频**：蜂鸣器TIM1中断驱动，13首预置旋律
 
 ---
 
-## 🔧 硬件架构 / Hardware Architecture
+## 硬件架构
 
-### 引脚分配 / Pin Mapping
+### 引脚分配
 
 | 模块 | 引脚 | 功能 |
 |------|------|------|
@@ -43,13 +43,13 @@
 | OLED RES | PD4 | GPIO输出 |
 | 蓝牙TX/RX | PA2/PA3 | USART2 @9600 |
 | ESP8266 TX/RX | PB10/PB11 | USART3 @115200 |
-| 避障红外L/R | PC1/PC2 | GPIO上拉输入 |
-| 巡线红外BL/BR | PG3/PG2 | GPIO上拉输入 |
+| 避障红外左/右 | PC1/PC2 | GPIO上拉输入 |
+| 巡线红外左下/右下 | PG3/PG2 | GPIO上拉输入 |
 | KEY1/KEY0 | PE3/PE4 | 外部中断 |
-| 蜂鸣器 | PF0 | TIM1中断 |
+| 蜂鸣器 | PF0 | TIM1中断驱动 |
 | LED | PB5/PE5 | GPIO推挽输出 |
 
-### 定时器分配 / Timer Allocation
+### 定时器分配
 
 | 定时器 | 用途 | 频率 | 中断 |
 |--------|------|------|------|
@@ -61,7 +61,7 @@
 
 ---
 
-## 📁 项目结构 / Project Structure
+## 项目结构
 
 ```
 ├── USER/                       # 用户应用层
@@ -85,45 +85,43 @@
 │   ├── led.c/h                 # LED指示灯
 │   └── delay.c/h               # 延时函数
 ├── system/                     # 系统配置
-│   └── sys.c/h                 # NVIC配置
+│   └── sys.c/h                 # NVIC优先级配置
 ├── CMSIS/                      # ARM CMSIS 内核文件
 ├── STM32F10x_StdPeriph_Driver/ # STM32标准外设库
 ├── PROJ/                       # Keil MDK项目文件
 │   └── project.uvprojx         # 项目工程文件
-├── LIST/                       # 编译列表输出（gitignore）
-├── OUT/                        # 编译目标输出（gitignore）
-├── .gitignore
+├── LICENSE                     # MIT许可证
 └── README.md
 ```
 
 ---
 
-## 💻 软件架构 / Software Architecture
+## 软件架构
 
-### 分层设计 / Layered Design
+### 分层设计
 
 ```
-┌─────────────┐  应用层：主循环调度、多模式控制
-├─────────────┤  通信层：MQTT、蓝牙协议
-├─────────────┤  驱动层：硬件外设驱动
-└─────────────┘  硬件层：STM32F103VET6
+应用层：主循环调度、5种模式控制
+通信层：MQTT协议、蓝牙串口协议
+驱动层：硬件外设驱动（电机、传感器、OLED等）
+硬件层：STM32F103VET6 + 外设
 ```
 
-### 主循环调度 / Main Loop Schedule
+### 主循环调度
 
 每循环约 **40ms**，依次执行：
 
 | 步骤 | 任务 | 频率 |
 |------|------|------|
-| 1 | DHT11温湿度采集 | 每600ms |
+| 1 | DHT11温湿度采集 | 每600ms采集一次 |
 | 2 | 蓝牙指令解析 | 每次循环 |
 | 3 | 按键检测 | 每次循环 |
-| 4 | OLED刷新（脏标志） | 数据变化时 |
-| 5 | 模式控制执行 | 每次循环 |
+| 4 | OLED刷新（脏标志机制） | 仅数据变化时刷新 |
+| 5 | 5种模式控制逻辑 | 每次循环 |
 | 6 | 超声波测距 | 每次循环 |
 | 7 | IoT通信（上报/心跳/命令） | 分频执行 |
 
-### 5种工作模式 / 5 Operating Modes
+### 5种工作模式
 
 | 模式 | 值 | 说明 |
 |------|----|------|
@@ -133,7 +131,9 @@
 | **跟随模式** | 3 | 超声波+舵机扫描，保持安全距离 |
 | **巡线模式** | 4 | 底部红外检测黑线，差速循迹 |
 
-### 非阻塞通信 / Non-blocking Communication
+### 非阻塞通信
+
+WiFi初始化期间蓝牙依然响应，避免"卡死"：
 
 ```c
 void delay_parse(uint32_t ms)
@@ -146,21 +146,20 @@ void delay_parse(uint32_t ms)
 }
 ```
 
-WiFi初始化期间，蓝牙依然响应，避免"卡死"。
-
 ---
 
-## ☁️ 华为云对接 / Huawei Cloud Integration
+## 华为云对接
 
 ### 平台配置
 
-| 参数 | 值 |
-|------|-----|
-| Broker | `efff2cb551.st1.iotda-device.cn-south-1.myhuaweicloud.com` |
+| 参数 | 说明 |
+|------|------|
+| Broker | `YOUR_BROKER_ADDRESS`（替换为平台接入地址） |
 | 端口 | 1883 |
-| 设备ID | `6a4baaccc9429d337f57cf79_myNodeId` |
+| 设备ID | `YOUR_DEVICE_ID`（替换为你的设备ID） |
 | 心跳周期 | 60秒 |
 | 上报间隔 | ~8秒 |
+| WiFi | `YOUR_WIFI_SSID` / `YOUR_WIFI_PASSWORD`（替换） |
 
 ### 数据上报格式
 
@@ -169,11 +168,11 @@ WiFi初始化期间，蓝牙依然响应，避免"卡死"。
   "services": [{
     "service_id": "smokeDetector",
     "properties": {
-      "temperature": 28.0,
-      "humidity": 65,
-      "distance": 44.8,
-      "mode": 0,
-      "speed": 650
+      "temperature": 28.0,    /* 温度 */
+      "humidity": 65,         /* 湿度 */
+      "distance": 44.8,       /* 距离(cm) */
+      "mode": 0,              /* 模式 0-4 */
+      "speed": 650            /* 速度 0-999 */
     }
   }]
 }
@@ -181,14 +180,22 @@ WiFi初始化期间，蓝牙依然响应，避免"卡死"。
 
 ### 支持的命令
 
-运动控制：`goA/goB/goL/goR/stop`
-模式切换：`mode0` ~ `mode4`
-参数设置：`servo{angle}` `setspeed{speed}` `screen{page}`
-其他：`beep` `music` `ledon/ledoff` `log` `getdata` `help`
+| 命令 | 功能 |
+|------|------|
+| `goA/goB/goL/goR/stop` | 运动控制（前进/后退/左转/右转/停止） |
+| `mode0` ~ `mode4` | 切换5种工作模式 |
+| `servo{angle}` | 舵机转到指定角度 |
+| `setspeed{speed}` | 设置速度(0-999) |
+| `screen{0/1/2}` | 切换OLED显示页面 |
+| `beepon/music/music off` | 蜂鸣器/音乐控制 |
+| `ledon/ledoff` | LED开关 |
+| `log` | 调试日志开关 |
+| `getdata` | 主动查询传感器数据 |
+| `help` | 显示帮助列表 |
 
 ---
 
-## 🚀 快速开始 / Getting Started
+## 快速开始
 
 ### 环境要求
 
@@ -206,56 +213,42 @@ WiFi初始化期间，蓝牙依然响应，避免"卡死"。
 
 ### 使用说明
 
-1. **上电**：自动初始化，OLED显示开机动画
-2. **蓝牙控制**：手机连接HC-05，发送指令
+1. **上电**：系统自动初始化，OLED显示开机动画
+2. **蓝牙控制**：手机连接HC-05蓝牙模块，发送指令
 3. **模式切换**：发送 `mode0`~`mode4`
-4. **WiFi连接**：自动连接WiFi（TQ 2805）
-5. **云端控制**：华为云IoT平台下发命令
-6. **OLED切换**：按KEY1或发 `screen0/1/2`
+4. **WiFi连接**：自动连接配置的WiFi，约10秒
+5. **云端控制**：华为云IoT平台可下发命令、接收数据
+6. **OLED切换**：按KEY1或发送 `screen0/1/2`
+7. **紧急停止**：按KEY0或发送 `stop`
 
 ---
 
-## 🧪 测试结果 / Test Results
+## 测试结果
 
 | 测试项 | 结果 |
 |--------|------|
-| 电机驱动 | ✅ 正反转/差速转向正常 |
-| 超声波测距 | ✅ 精度±0.3cm |
-| DHT11温湿度 | ✅ 校验通过 |
-| 红外避障 | ✅ 3次采样防抖 |
-| 巡线功能 | ✅ 差速修正稳定 |
-| OLED显示 | ✅ 3页面切换正常 |
-| 蓝牙控制 | ✅ 10米内<100ms响应 |
-| 华为云对接 | ✅ 上报成功率>99% |
+| 电机驱动 | 正反转/差速转向正常 |
+| 超声波测距 | 精度±0.3cm |
+| DHT11温湿度 | 数据校验通过 |
+| 红外避障 | 3次采样防抖，响应灵敏 |
+| 巡线功能 | 差速修正稳定，直线循迹良好 |
+| OLED显示 | 3页面切换正常，刷新流畅 |
+| 蓝牙控制 | 10米内响应时间<100ms |
+| 华为云对接 | 数据上报成功率>99% |
 
 ---
 
-## 📝 蓝牙指令集 / Bluetooth Commands
-
-| 指令 | 功能 |
-|------|------|
-| goA / goB / goL / goR / stop | 运动控制 |
-| mode0 ~ mode4 | 模式切换 |
-| speedup / speeddown | 加减速 |
-| setspeedXXX | 直接设速(0-999) |
-| screen0 / 1 / 2 | OLED页面切换 |
-| beepon / music / music off | 蜂鸣器/音乐 |
-| log | 调试日志开关 |
-| help | 帮助列表 |
-
----
-
-## 👥 团队 / Team
+## 团队信息
 
 | 角色 | 姓名 | 职责 |
 |------|------|------|
-| 组长 🧑‍💼 | **唐秋** | 系统集成、多模式控制、OLED显示、蜂鸣器音乐 |
-| 组员 🔧 | **王宇** | 硬件驱动（电机、传感器、OLED、舵机、LED） |
-| 组员 📡 | **税华桂** | 通信与云平台（ESP8266、MQTT、华为云、蓝牙） |
-| 指导老师 👨‍🏫 | **李志凯** | 项目指导 |
+| 组长 | **唐秋** | 系统集成、多模式控制、OLED显示、蜂鸣器音乐 |
+| 组员 | **王宇** | 硬件驱动（电机、传感器、OLED、舵机、LED） |
+| 组员 | **税华桂** | 通信与云平台（ESP8266、MQTT、华为云、蓝牙） |
+| 指导老师 | **李志凯** | 项目指导 |
 
 ---
 
-## 📜 许可证 / License
+## 许可证
 
-本项目仅供学习交流使用。
+本项目仅供学习交流使用，基于 MIT 协议开源。
